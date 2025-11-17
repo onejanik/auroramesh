@@ -17,7 +17,13 @@ export default async function eventsHandler(req: NextApiRequest, res: NextApiRes
   if (req.method === 'POST') {
     try {
       const payload = schema.parse(req.body);
-      const event = createEvent({ userId: user.id, ...payload });
+      const event = createEvent({ 
+        userId: user.id, 
+        title: payload.title,
+        description: payload.description,
+        location: payload.location,
+        startsAt: payload.startsAt
+      });
       res.status(201).json(event);
       return;
     } catch (error) {
