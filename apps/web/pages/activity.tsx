@@ -105,7 +105,7 @@ const ActivityPage = () => {
                 {notification.actor.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={notification.actor.avatarUrl}
+                    src={notification.actor.avatarUrl.startsWith('http') ? notification.actor.avatarUrl : `/api/media?path=${encodeURIComponent(notification.actor.avatarUrl)}`}
                     alt={notification.actor.name ?? 'Avatar'}
                     style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                   />

@@ -114,7 +114,7 @@ const FollowRequestsPage = () => {
                   >
                     {request.avatar_url ? (
                       // eslint-disable-next-line @next/next/no-img-element
-                      <img src={request.avatar_url} alt={request.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      <img src={request.avatar_url.startsWith('http') ? request.avatar_url : `/api/media?path=${encodeURIComponent(request.avatar_url)}`} alt={request.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     ) : (
                       (request.name?.[0] ?? '?')
                     )}

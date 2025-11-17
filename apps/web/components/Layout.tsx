@@ -141,7 +141,7 @@ export const Layout = ({ children }: Props) => {
 
   const avatarContent = user?.avatar_url ? (
     // eslint-disable-next-line @next/next/no-img-element
-    <img src={user.avatar_url} alt={user.name ?? 'Avatar'} />
+    <img src={user.avatar_url.startsWith('http') ? user.avatar_url : `/api/media?path=${encodeURIComponent(user.avatar_url)}`} alt={user.name ?? 'Avatar'} />
   ) : (
     <span>{user?.name?.[0] ?? '?'}</span>
   );
@@ -150,8 +150,11 @@ export const Layout = ({ children }: Props) => {
     <div className="app-shell">
       <header className="app-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
-          <Link href={user ? '/feed' : '/'} style={{ fontWeight: 700, fontSize: 20, color: 'var(--text)', textDecoration: 'none' }}>
+          <Link href={user ? '/feed' : '/'} style={{ fontWeight: 700, fontSize: 20, color: 'var(--text)', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             AuroraMesh
+            <span style={{ fontSize: '0.7rem', padding: '0.15rem 0.5rem', background: 'var(--accent)', color: 'var(--accent-contrast)', borderRadius: 8, fontWeight: 600 }}>
+              BETA
+            </span>
           </Link>
           {user && (
             <nav style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>

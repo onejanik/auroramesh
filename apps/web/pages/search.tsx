@@ -145,7 +145,7 @@ const SearchPage = () => {
                 >
                   {user.avatar_url ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={user.avatar_url} alt={user.name} style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
+                    <img src={user.avatar_url.startsWith('http') ? user.avatar_url : `/api/media?path=${encodeURIComponent(user.avatar_url)}`} alt={user.name} style={{ width: '100%', height: '100%', borderRadius: '50%' }} />
                   ) : (
                     (user.name?.[0] ?? '?')
                   )}

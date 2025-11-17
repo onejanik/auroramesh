@@ -54,11 +54,14 @@ export const createPoll = ({ userId, question, options }: CreatePayload): Poll =
     return toPoll(poll, author, []);
   });
 
-export const listPolls = (viewerId?: number, excludeUserId?: number): Poll[] => {
+export const listPolls = (viewerId?: number, excludeUserId?: number, userId?: number): Poll[] => {
   const db = readOnlyDatabase();
-  const viewerVotes = viewerId ? db.poll_votes.filter((vote) => vote.user_id === viewerId) : undefined;
+  const viewerVotes = viewerId !== undefined ? db.poll_votes.filter((vote) => vote.user_id === viewerId) : undefined;
   return db.polls
     .filter((poll) => {
+      // Filter by userId
+      if (userId !== undefined && poll.user_id !== userId) return false;
+      
       // Filter by excludeUserId
       if (excludeUserId && poll.user_id === excludeUserId) return false;
       

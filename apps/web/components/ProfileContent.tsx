@@ -1,13 +1,27 @@
 import Link from 'next/link';
 import { useState } from 'react';
+import useSWR from 'swr';
 import { PostList } from './PostList';
 import { FollowersModal } from './FollowersModal';
+import { PollCard } from './PollCard';
+import { EventCard } from './EventCard';
+import { SlideshowCard } from './SlideshowCard';
+import { AudioCard } from './AudioCard';
+import { fetcher } from '../lib/fetcher';
 import type { Post } from '../types/post';
+import type { Poll } from '../types/poll';
+import type { Event } from '../types/event';
+import type { Slideshow } from '../types/slideshow';
+import type { AudioNote } from '../types/audio';
 import type { UserRecord, UserStats } from '../lib/models/users';
 
 type Props = {
   user: Pick<UserRecord, 'id' | 'name' | 'bio' | 'avatar_url' | 'is_private'>;
   posts: Post[];
+  polls?: Poll[];
+  events?: Event[];
+  slideshows?: Slideshow[];
+  audios?: AudioNote[];
   stats: UserStats;
   isOwner?: boolean;
   initialFollowing?: boolean;
@@ -15,14 +29,21 @@ type Props = {
   canViewContent?: boolean;
 };
 
-export const ProfileContent = ({ user, posts, stats, isOwner = false, initialFollowing = false, initialPending = false, canViewContent = true }: Props) => {
+export const ProfileContent = ({ user, posts, polls = [], events = [], slideshows = [], audios = [], stats, isOwner = false, initialFollowing = false, initialPending = false, canViewContent = true }: Props) => {
   const [isFollowing, setIsFollowing] = useState(initialFollowing);
   const [isPending, setIsPending] = useState(initialPending);
   const [followerCount, setFollowerCount] = useState(stats.followerCount);
   const [isUpdating, setIsUpdating] = useState(false);
   const [showModal, setShowModal] = useState<'followers' | 'following' | null>(null);
+  const [activeTab, setActiveTab] = useState<'posts' | 'saved'>('posts');
   
   const isPrivateAccount = user.is_private && !canViewContent;
+  
+  // Fetch saved posts only if user is owner and on saved tab
+  const { data: savedPostsData } = useSWR<{ posts: Post[]; nextCursor: string | null }>(
+    isOwner && activeTab === 'saved' ? '/api/posts/saved' : null,
+    fetcher
+  );
 
   const handleToggleFollow = async () => {
     if (isOwner || isUpdating) return;
@@ -79,7 +100,7 @@ export const ProfileContent = ({ user, posts, stats, isOwner = false, initialFol
           {user.avatar_url ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={user.avatar_url}
+              src={user.avatar_url.startsWith('http') ? user.avatar_url : `/api/media?path=${encodeURIComponent(user.avatar_url)}`}
               alt={user.name}
               style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
             />
@@ -159,13 +180,115 @@ export const ProfileContent = ({ user, posts, stats, isOwner = false, initialFol
 
       {!isPrivateAccount && (
         <section>
-          <h2>Beiträge</h2>
-          {posts.length ? (
-            <PostList posts={posts} isLoading={false} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+            <h2 style={{ margin: 0 }}>Beiträge</h2>
+            {isOwner && (
+              <div style={{ display: 'flex', gap: '0.5rem', border: '1px solid var(--border)', borderRadius: 12, padding: '0.25rem' }}>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('posts')}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: 8,
+                    border: 'none',
+                    background: activeTab === 'posts' ? 'var(--accent)' : 'transparent',
+                    color: activeTab === 'posts' ? 'var(--accent-contrast)' : 'var(--text)',
+                    cursor: 'pointer',
+                    fontWeight: activeTab === 'posts' ? 600 : 400,
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  Beiträge
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setActiveTab('saved')}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    borderRadius: 8,
+                    border: 'none',
+                    background: activeTab === 'saved' ? 'var(--accent)' : 'transparent',
+                    color: activeTab === 'saved' ? 'var(--accent-contrast)' : 'var(--text)',
+                    cursor: 'pointer',
+                    fontWeight: activeTab === 'saved' ? 600 : 400,
+                    transition: 'all 0.2s ease'
+                  }}
+                >
+                  <i className="bi bi-bookmark-fill" style={{ marginRight: '0.25rem' }} />
+                  Gespeichert
+                </button>
+              </div>
+            )}
+          </div>
+          {activeTab === 'saved' && isOwner ? (
+            <div>
+              {savedPostsData ? (
+                savedPostsData.posts.length > 0 ? (
+                  <PostList posts={savedPostsData.posts} isLoading={false} />
+                ) : (
+                  <p style={{ color: 'var(--muted)' }}>Du hast noch keine Beiträge gespeichert.</p>
+                )
+              ) : (
+                <p style={{ color: 'var(--muted)' }}>Wird geladen...</p>
+              )}
+            </div>
           ) : (
-            <p style={{ color: 'var(--muted)' }}>
-              {isOwner ? 'Du hast noch nichts gepostet. Starte mit deinem ersten Beitrag!' : 'Noch keine Beiträge vorhanden.'}
-            </p>
+            <>
+              {posts.length === 0 && polls.length === 0 && events.length === 0 && slideshows.length === 0 && audios.length === 0 ? (
+                <p style={{ color: 'var(--muted)' }}>
+                  {isOwner ? 'Du hast noch nichts gepostet. Starte mit deinem ersten Beitrag!' : 'Noch keine Beiträge vorhanden.'}
+                </p>
+              ) : (
+                <div>
+                  {polls.length > 0 && (
+                    <div style={{ marginBottom: '1.5rem' }}>
+                      <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>Umfragen</h3>
+                      <div className="stack">
+                        {polls.map((poll) => (
+                          <PollCard key={poll.id} poll={poll} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {events.length > 0 && (
+                    <div style={{ marginBottom: '1.5rem' }}>
+                      <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>Events</h3>
+                      <div className="stack">
+                        {events.map((event) => (
+                          <EventCard key={event.id} event={event} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {slideshows.length > 0 && (
+                    <div style={{ marginBottom: '1.5rem' }}>
+                      <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>Slideshows</h3>
+                      <div className="stack">
+                        {slideshows.map((slideshow) => (
+                          <SlideshowCard key={slideshow.id} slideshow={slideshow} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {audios.length > 0 && (
+                    <div style={{ marginBottom: '1.5rem' }}>
+                      <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>Audio-Notizen</h3>
+                      <div className="stack">
+                        {audios.map((audio) => (
+                          <AudioCard key={audio.id} note={audio} />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {posts.length > 0 && (
+                    <div>
+                      <h3 style={{ marginBottom: '1rem', fontSize: '1.1rem' }}>Posts</h3>
+                      <PostList posts={posts} isLoading={false} />
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
           )}
         </section>
       )}

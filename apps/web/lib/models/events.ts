@@ -51,10 +51,13 @@ export const createEvent = ({ userId, title, description, location, startsAt }: 
     return toEvent(event, author, db.event_rsvps, userId);
   });
 
-export const listEvents = (viewerId?: number, excludeUserId?: number): Event[] => {
+export const listEvents = (viewerId?: number, excludeUserId?: number, userId?: number): Event[] => {
   const db = readOnlyDatabase();
   return db.events
     .filter((event) => {
+      // Filter by userId
+      if (userId !== undefined && event.user_id !== userId) return false;
+      
       // Filter by excludeUserId
       if (excludeUserId && event.user_id === excludeUserId) return false;
       

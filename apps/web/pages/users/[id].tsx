@@ -3,11 +3,23 @@ import { ProfileContent } from '../../components/ProfileContent';
 import { requirePageAuth } from '../../lib/auth/pageAuth';
 import { getUserById, getUserStats, getFollowStatus, canViewPrivateAccount, type UserRecord, type UserStats } from '../../lib/models/users';
 import { listPosts } from '../../lib/models/posts';
+import { listPolls } from '../../lib/models/polls';
+import { listEvents } from '../../lib/models/events';
+import { listSlideshows } from '../../lib/models/slideshows';
+import { listAudioNotes } from '../../lib/models/audios';
 import type { Post } from '../../types/post';
+import type { Poll } from '../../types/poll';
+import type { Event } from '../../types/event';
+import type { Slideshow } from '../../types/slideshow';
+import type { AudioNote } from '../../types/audio';
 
 type Props = {
   user: Pick<UserRecord, 'id' | 'name' | 'bio' | 'avatar_url' | 'is_private'>;
   posts: Post[];
+  polls: Poll[];
+  events: Event[];
+  slideshows: Slideshow[];
+  audios: AudioNote[];
   isOwner: boolean;
   stats: UserStats;
   initialFollowing: boolean;
@@ -15,7 +27,7 @@ type Props = {
   canViewContent: boolean;
 };
 
-const UserProfilePage = ({ user, posts, isOwner, stats, initialFollowing, initialPending, canViewContent }: Props) => {
+const UserProfilePage = ({ user, posts, polls, events, slideshows, audios, isOwner, stats, initialFollowing, initialPending, canViewContent }: Props) => {
   if (!user) {
     return (
       <Layout>
@@ -28,7 +40,11 @@ const UserProfilePage = ({ user, posts, isOwner, stats, initialFollowing, initia
     <Layout>
       <ProfileContent 
         user={user} 
-        posts={posts} 
+        posts={posts}
+        polls={polls}
+        events={events}
+        slideshows={slideshows}
+        audios={audios}
         stats={stats} 
         isOwner={isOwner} 
         initialFollowing={initialFollowing}
@@ -57,10 +73,14 @@ export const getServerSideProps = (ctx: any) =>
     const canView = canViewPrivateAccount(userId, profileId);
     const followStatus = isOwner ? 'none' : getFollowStatus(userId, profileId);
     
-    // Only fetch posts if user can view the content
+    // Only fetch content if user can view the content
     const { posts } = canView 
       ? listPosts(50, undefined, { userId: profileId, viewerId: userId })
       : { posts: [] };
+    const polls = canView ? listPolls(userId, undefined, profileId) : [];
+    const events = canView ? listEvents(userId, undefined, profileId) : [];
+    const slideshows = canView ? listSlideshows(userId, undefined, profileId) : [];
+    const audios = canView ? listAudioNotes(userId, undefined, profileId) : [];
     
     const stats = getUserStats(profileId);
 
@@ -74,6 +94,10 @@ export const getServerSideProps = (ctx: any) =>
           is_private: user.is_private
         },
         posts,
+        polls,
+        events,
+        slideshows,
+        audios,
         isOwner,
         stats: canView ? stats : { 
           ...stats, 

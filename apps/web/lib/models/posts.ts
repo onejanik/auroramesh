@@ -292,3 +292,45 @@ export const unlikePost = (postId: number, userId: number) => setReaction('likes
 export const savePost = (postId: number, userId: number) => setReaction('bookmarks', postId, userId, true);
 export const unsavePost = (postId: number, userId: number) => setReaction('bookmarks', postId, userId, false);
 
+export const listSavedPosts = (userId: number, limit = 50, cursor?: string): { posts: Post[]; nextCursor: string | null } => {
+  const db = readOnlyDatabase();
+  // Get all bookmarked post IDs for this user
+  const savedPostIds = new Set(
+    db.bookmarks
+      .filter((bookmark) => bookmark.user_id === userId)
+      .map((bookmark) => bookmark.post_id)
+  );
+  
+  if (savedPostIds.size === 0) {
+    return { posts: [], nextCursor: null };
+  }
+  
+  // Get all posts that are saved by this user
+  let posts = db.posts
+    .filter((post) => savedPostIds.has(post.id))
+    .sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+  
+  if (cursor) {
+    posts = posts.filter((post) => post.created_at < cursor);
+  }
+  
+  const reactionMaps = buildReactionMaps(db, userId);
+  const commentCounts = buildCommentCounts(db);
+  
+  const chunk = posts.slice(0, limit + 1);
+  let nextCursor: string | null = null;
+  if (chunk.length > limit) {
+    const last = chunk.pop()!;
+    nextCursor = last.created_at;
+  }
+  
+  const mapped = chunk
+    .map((post) => {
+      const author = db.users.find((u) => u.id === post.user_id);
+      return author ? toPost(post, author, reactionMaps, commentCounts, userId) : null;
+    })
+    .filter(Boolean) as Post[];
+  
+  return { posts: mapped, nextCursor };
+};
+

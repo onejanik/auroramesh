@@ -123,7 +123,7 @@ export const PostCard = ({ post }: Props) => {
           >
             {post.author.avatarUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={post.author.avatarUrl} alt={post.author.name ?? 'Avatar'} style={{ width: '100%', height: '100%' }} />
+              <img src={post.author.avatarUrl.startsWith('http') ? post.author.avatarUrl : `/api/media?path=${encodeURIComponent(post.author.avatarUrl)}`} alt={post.author.name ?? 'Avatar'} style={{ width: '100%', height: '100%' }} />
             ) : (
               <span style={{ fontSize: 12, color: 'var(--muted)', lineHeight: '40px', textAlign: 'center', display: 'block' }}>
                 {post.author.name?.[0] ?? '?'}

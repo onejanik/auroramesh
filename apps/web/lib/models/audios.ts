@@ -37,10 +37,13 @@ export const createAudioNote = ({ userId, audioUrl, caption }: CreatePayload): A
     return toAudioNote(note, author);
   });
 
-export const listAudioNotes = (viewerId?: number, excludeUserId?: number): AudioNote[] => {
+export const listAudioNotes = (viewerId?: number, excludeUserId?: number, userId?: number): AudioNote[] => {
   const db = readOnlyDatabase();
   return db.audios
     .filter((note) => {
+      // Filter by userId
+      if (userId !== undefined && note.user_id !== userId) return false;
+      
       // Filter by excludeUserId
       if (excludeUserId && note.user_id === excludeUserId) return false;
       

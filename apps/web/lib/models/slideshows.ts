@@ -40,10 +40,13 @@ export const createSlideshow = ({ userId, mediaUrls, caption }: CreatePayload): 
     return toSlideshow(slideshow, author);
   });
 
-export const listSlideshows = (viewerId?: number, excludeUserId?: number): Slideshow[] => {
+export const listSlideshows = (viewerId?: number, excludeUserId?: number, userId?: number): Slideshow[] => {
   const db = readOnlyDatabase();
   return db.slideshows
     .filter((slideshow) => {
+      // Filter by userId
+      if (userId !== undefined && slideshow.user_id !== userId) return false;
+      
       // Filter by excludeUserId
       if (excludeUserId && slideshow.user_id === excludeUserId) return false;
       

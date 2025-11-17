@@ -23,7 +23,7 @@ export const StoryRail = ({ stories, currentUser }: Props) => {
             <div className="story-avatar story-avatar--cta">
               {currentUser?.avatar_url ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={currentUser.avatar_url} alt={currentUser.name ?? 'Avatar'} />
+                <img src={currentUser.avatar_url.startsWith('http') ? currentUser.avatar_url : `/api/media?path=${encodeURIComponent(currentUser.avatar_url)}`} alt={currentUser.name ?? 'Avatar'} />
               ) : (
                 <span>{currentUser?.name?.[0] ?? '+'}</span>
               )}
@@ -39,7 +39,7 @@ export const StoryRail = ({ stories, currentUser }: Props) => {
             <div className="story-avatar">
               {story.author.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={story.author.avatarUrl} alt={story.author.name ?? 'Avatar'} />
+                <img src={story.author.avatarUrl.startsWith('http') ? story.author.avatarUrl : `/api/media?path=${encodeURIComponent(story.author.avatarUrl)}`} alt={story.author.name ?? 'Avatar'} />
               ) : (
                 <span>{story.author.name?.[0] ?? '?'}</span>
               )}
