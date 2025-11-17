@@ -10,7 +10,7 @@ WORKDIR /app
 
 # Copy package files
 COPY package.json package-lock.json* ./
-RUN npm ci --only=production
+RUN npm install --production
 
 # Rebuild the source code only when needed
 FROM base AS builder
@@ -25,7 +25,7 @@ RUN npm run build
 FROM base AS runner
 WORKDIR /app
 
-ENV NODE_ENV production
+ENV NODE_ENV=production
 
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
@@ -43,8 +43,7 @@ USER nextjs
 
 EXPOSE 8000
 
-ENV PORT 8000
-ENV HOSTNAME "0.0.0.0"
+ENV PORT=8000
+ENV HOSTNAME="0.0.0.0"
 
 CMD ["node", "server.js"]
-
