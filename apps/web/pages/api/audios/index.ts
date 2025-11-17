@@ -15,7 +15,11 @@ export default async function audiosHandler(req: NextApiRequest, res: NextApiRes
   if (req.method === 'POST') {
     try {
       const payload = schema.parse(req.body);
-      const note = createAudioNote({ userId: user.id, ...payload });
+      const note = createAudioNote({ 
+        userId: user.id, 
+        audioUrl: payload.audioUrl,
+        caption: payload.caption 
+      });
       res.status(201).json(note);
       return;
     } catch (error) {
