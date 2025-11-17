@@ -1,0 +1,17 @@
+{
+  "name": "AuroraMesh",
+  "short_name": "AuroraMesh",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0c10",
+  "theme_color": "#6c5ce7",
+  "description": "AuroraMesh verbindet kreative Stimmen mit immersiven Stories und Medien.",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}
+
