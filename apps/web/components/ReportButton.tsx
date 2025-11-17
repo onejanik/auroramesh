@@ -1,11 +1,20 @@
 import { useState } from 'react';
+import { useCurrentUser } from '../lib/hooks/useCurrentUser';
 
 type Props = {
   targetType: 'post' | 'poll' | 'event' | 'slideshow' | 'audio' | 'story';
   targetId: number;
+  authorId?: number;
 };
 
-export const ReportButton = ({ targetType, targetId }: Props) => {
+export const ReportButton = ({ targetType, targetId, authorId }: Props) => {
+  const { user } = useCurrentUser();
+  const isOwnContent = user && authorId && user.id === authorId;
+  
+  // Don't show report button for own content
+  if (isOwnContent) {
+    return null;
+  }
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState('');
   const [isSubmitting, setSubmitting] = useState(false);

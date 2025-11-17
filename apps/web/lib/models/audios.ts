@@ -74,3 +74,20 @@ export const listAudioNotes = (viewerId?: number, excludeUserId?: number, userId
     .filter(Boolean) as AudioNote[];
 };
 
+export const deleteAudioNote = (id: number, userId: number) =>
+  updateDatabase((db) => {
+    const index = db.audios.findIndex((a) => a.id === id && a.user_id === userId);
+    if (index === -1) return { changes: 0 };
+    db.audios.splice(index, 1);
+    return { changes: 1 };
+  });
+
+export const getAudioNoteById = (id: number, viewerId?: number): AudioNote | undefined => {
+  const db = readOnlyDatabase();
+  const note = db.audios.find((a) => a.id === id);
+  if (!note) return undefined;
+  const author = db.users.find((u) => u.id === note.user_id);
+  if (!author) return undefined;
+  return toAudioNote(note, author);
+};
+

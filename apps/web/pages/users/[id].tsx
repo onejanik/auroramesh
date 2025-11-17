@@ -1,7 +1,7 @@
 import { Layout } from '../../components/Layout';
 import { ProfileContent } from '../../components/ProfileContent';
 import { requirePageAuth } from '../../lib/auth/pageAuth';
-import { getUserById, getUserStats, getFollowStatus, canViewPrivateAccount, type UserRecord, type UserStats } from '../../lib/models/users';
+import { getUserById, getUserStats, getFollowStatus, canViewPrivateAccount, getUserByName, type UserRecord, type UserStats } from '../../lib/models/users';
 import { listPosts } from '../../lib/models/posts';
 import { listPolls } from '../../lib/models/polls';
 import { listEvents } from '../../lib/models/events';
@@ -59,7 +59,21 @@ export default UserProfilePage;
 
 export const getServerSideProps = (ctx: any) =>
   requirePageAuth(ctx, async ({ userId }) => {
-    const profileId = Number(ctx.params?.id);
+    const profileIdOrName = ctx.params?.id;
+    let profileId: number;
+    
+    // Check if it's a number (ID) or string (name)
+    if (Number.isFinite(Number(profileIdOrName))) {
+      profileId = Number(profileIdOrName);
+    } else {
+      // Try to find user by name
+      const userByName = getUserByName(profileIdOrName);
+      if (!userByName) {
+        return { notFound: true };
+      }
+      profileId = userByName.id;
+    }
+    
     if (!Number.isFinite(profileId)) {
       return { notFound: true };
     }

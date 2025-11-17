@@ -130,3 +130,23 @@ export const votePoll = (pollId: number, optionId: string, userId: number) =>
     return toPoll(poll, author, db.poll_votes.filter((entry) => entry.user_id === userId));
   });
 
+export const deletePoll = (id: number, userId: number) =>
+  updateDatabase((db) => {
+    const index = db.polls.findIndex((p) => p.id === id && p.user_id === userId);
+    if (index === -1) return { changes: 0 };
+    db.polls.splice(index, 1);
+    // Also remove all votes for this poll
+    db.poll_votes = db.poll_votes.filter((vote) => vote.poll_id !== id);
+    return { changes: 1 };
+  });
+
+export const getPollById = (id: number, viewerId?: number): Poll | undefined => {
+  const db = readOnlyDatabase();
+  const poll = db.polls.find((p) => p.id === id);
+  if (!poll) return undefined;
+  const author = db.users.find((u) => u.id === poll.user_id);
+  if (!author) return undefined;
+  const viewerVotes = viewerId !== undefined ? db.poll_votes.filter((vote) => vote.user_id === viewerId) : undefined;
+  return toPoll(poll, author, viewerVotes);
+};
+

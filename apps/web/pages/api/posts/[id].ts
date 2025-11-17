@@ -1,6 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { deletePost, getPostById, updatePostPrivacy } from '../../../lib/models/posts';
 import { requireUser } from '../../../lib/auth/requireUser';
+import { isAdminUser } from '../../../lib/auth/isAdmin';
+import { getUserById } from '../../../lib/models/users';
 
 export default async function postHandler(req: NextApiRequest, res: NextApiResponse) {
   const user = requireUser(req, res);
@@ -38,7 +40,22 @@ export default async function postHandler(req: NextApiRequest, res: NextApiRespo
   }
 
   if (req.method === 'DELETE') {
-    const result = deletePost(id, user.id);
+    const post = getPostById(id);
+    if (!post) {
+      res.status(404).json({ message: 'Post not found' });
+      return;
+    }
+    
+    const userRecord = getUserById(user.id);
+    const isAdmin = userRecord ? isAdminUser(userRecord) : false;
+    const isOwner = post.author.id === user.id;
+    
+    if (!isOwner && !isAdmin) {
+      res.status(403).json({ message: 'Not allowed' });
+      return;
+    }
+    
+    const result = deletePost(id, post.author.id);
     if (!result.changes) {
       res.status(403).json({ message: 'Not allowed' });
       return;

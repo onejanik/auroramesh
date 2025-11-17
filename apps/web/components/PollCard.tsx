@@ -1,16 +1,38 @@
+import Link from 'next/link';
 import { useState } from 'react';
 import type { Poll } from '../types/poll';
 import { ReportButton } from './ReportButton';
+import { useCurrentUser } from '../lib/hooks/useCurrentUser';
+import { isAdminUser } from '../lib/auth/isAdmin';
 
 type Props = {
   poll: Poll;
+  viewerId?: number;
+  isOwner?: boolean;
 };
 
-export const PollCard = ({ poll }: Props) => {
+export const PollCard = ({ poll, viewerId, isOwner: propIsOwner }: Props) => {
+  const { user } = useCurrentUser();
   const [state, setState] = useState(poll);
   const [isVoting, setVoting] = useState(false);
+  const [isDeleted, setIsDeleted] = useState(false);
+  
+  const isOwner = propIsOwner ?? (user && state.author.id === user.id);
+  const isAdmin = user ? isAdminUser({ id: user.id, email: user.email } as any) : false;
 
   const totalVotes = state.options.reduce((sum, option) => sum + option.votes, 0);
+
+  const handleDelete = async () => {
+    if (!confirm('Möchtest du diese Umfrage wirklich löschen?')) return;
+    try {
+      const response = await fetch(`/api/polls/${state.id}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Löschen fehlgeschlagen');
+      setIsDeleted(true);
+    } catch (error) {
+      console.error(error);
+      alert('Fehler beim Löschen');
+    }
+  };
 
   const vote = async (optionId: string) => {
     setVoting(true);
@@ -32,14 +54,33 @@ export const PollCard = ({ poll }: Props) => {
     }
   };
 
+  if (isDeleted) {
+    return null;
+  }
+
   return (
     <article className="card">
       <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
         <div>
-          <strong>{state.author.name ?? 'Unbekannt'}</strong>
+          <Link href={`/users/${state.author.id}`} style={{ textDecoration: 'none', color: 'var(--text)' }}>
+            <strong>{state.author.name ?? 'Unbekannt'}</strong>
+          </Link>
           <p style={{ margin: 0, color: 'var(--muted)' }}>{new Date(state.createdAt).toLocaleString()}</p>
         </div>
-        <ReportButton targetType="poll" targetId={state.id} />
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          {!isOwner && <ReportButton targetType="poll" targetId={state.id} authorId={state.author.id} />}
+          {(isOwner || isAdmin) && (
+            <button
+              type="button"
+              className="icon-button"
+              onClick={handleDelete}
+              style={{ color: '#e74c3c', borderColor: '#e74c3c' }}
+              title="Umfrage löschen"
+            >
+              <i className="bi bi-trash-fill" />
+            </button>
+          )}
+        </div>
       </header>
       <h3>{state.question}</h3>
       <div className="poll-options">

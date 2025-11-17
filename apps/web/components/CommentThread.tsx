@@ -1,8 +1,10 @@
+import Link from 'next/link';
 import { useState } from 'react';
 import useSWR from 'swr';
 import type { Comment } from '../types/comment';
 import { fetcher } from '../lib/fetcher';
 import { useCurrentUser } from '../lib/hooks/useCurrentUser';
+import { extractMentions } from '../lib/utils/mentions';
 
 type Props = {
   postId: number;
@@ -36,7 +38,19 @@ const CommentItem = ({
         <strong>{comment.author.name ?? 'Unbekannt'}</strong>
         <small>{new Date(comment.createdAt).toLocaleString()}</small>
       </div>
-      <p style={{ margin: '0.25rem 0', whiteSpace: 'pre-wrap' }}>{comment.content}</p>
+      <p style={{ margin: '0.25rem 0', whiteSpace: 'pre-wrap' }}>
+        {comment.content.split(/(@\w+)/g).map((part, idx) => {
+          if (part.startsWith('@')) {
+            const username = part.substring(1);
+            return (
+              <Link key={idx} href={`/users/${encodeURIComponent(username)}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                {part}
+              </Link>
+            );
+          }
+          return <span key={idx}>{part}</span>;
+        })}
+      </p>
       <div className="comment-actions">
         {comment.repliesCount > 0 && (
           <button type="button" className="link-button" onClick={() => setShowReplies((value) => !value)}>

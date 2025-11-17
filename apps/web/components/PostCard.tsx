@@ -132,12 +132,40 @@ export const PostCard = ({ post }: Props) => {
           </div>
           <div>
             <p style={{ margin: 0, fontWeight: 600, color: 'var(--text)' }}>{post.author.name ?? 'Unbekannt'}</p>
-            <small style={{ color: 'var(--muted)' }}>{new Date(post.createdAt).toLocaleString()}</small>
+            <Link href={`/posts/${post.id}`} style={{ textDecoration: 'none', color: 'var(--muted)' }}>
+              <small>{new Date(post.createdAt).toLocaleString()}</small>
+            </Link>
           </div>
         </Link>
         {post.caption && (
           <div className="markdown-body" style={{ marginTop: '1rem' }}>
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.caption}</ReactMarkdown>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={{
+                p: ({ children }) => {
+                  if (typeof children === 'string') {
+                    return (
+                      <p>
+                        {children.split(/(@\w+)/g).map((part, idx) => {
+                          if (part.startsWith('@')) {
+                            const username = part.substring(1);
+                            return (
+                              <Link key={idx} href={`/users/${encodeURIComponent(username)}`} style={{ color: 'var(--accent)', textDecoration: 'none' }}>
+                                {part}
+                              </Link>
+                            );
+                          }
+                          return <span key={idx}>{part}</span>;
+                        })}
+                      </p>
+                    );
+                  }
+                  return <p>{children}</p>;
+                }
+              }}
+            >
+              {post.caption}
+            </ReactMarkdown>
           </div>
         )}
         {post.tags?.length ? (
@@ -182,6 +210,29 @@ export const PostCard = ({ post }: Props) => {
             <i className="bi bi-chat-dots" />
             <span>{post.commentCount ?? 0}</span>
           </button>
+          <button
+            type="button"
+            className="icon-button"
+            onClick={async () => {
+              const url = `${window.location.origin}/posts/${post.id}`;
+              try {
+                await navigator.clipboard.writeText(url);
+                alert('Link wurde in die Zwischenablage kopiert!');
+              } catch (error) {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = url;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('Link wurde in die Zwischenablage kopiert!');
+              }
+            }}
+            title="Beitrag teilen"
+          >
+            <i className="bi bi-share" />
+          </button>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
           {isOwner && (
@@ -206,7 +257,7 @@ export const PostCard = ({ post }: Props) => {
               </button>
             </>
           )}
-          {!isOwner && <ReportButton targetType="post" targetId={post.id} />}
+          {!isOwner && <ReportButton targetType="post" targetId={post.id} authorId={post.author.id} />}
         </div>
       </div>
       {showComments && (

@@ -1,6 +1,8 @@
 import { readOnlyDatabase, updateDatabase, type StoredComment } from '../db';
 import type { Comment } from '../../types/comment';
 import { createNotification } from './notifications';
+import { extractMentions } from '../utils/mentions';
+import { getUserByName } from './users';
 
 const toComment = (
   comment: StoredComment,
@@ -53,14 +55,31 @@ export const createComment = ({
     };
     db.comments.push(comment);
     
-    // Create notification for post author
-    createNotification({
-      userId: post.user_id,
-      type: 'comment',
-      actorId: userId,
-      postId,
-      commentId: comment.id
-    });
+    // Create notification for post author (if not the commenter)
+    if (post.user_id !== userId) {
+      createNotification({
+        userId: post.user_id,
+        type: 'comment',
+        actorId: userId,
+        postId,
+        commentId: comment.id
+      });
+    }
+    
+    // Create notifications for mentioned users
+    const mentions = extractMentions(content);
+    for (const mention of mentions) {
+      const mentionedUser = getUserByName(mention);
+      if (mentionedUser && mentionedUser.id !== userId && mentionedUser.id !== post.user_id) {
+        createNotification({
+          userId: mentionedUser.id,
+          type: 'comment',
+          actorId: userId,
+          postId,
+          commentId: comment.id
+        });
+      }
+    }
 
     return toComment(comment, author, 0);
   });

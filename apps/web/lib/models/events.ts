@@ -110,3 +110,22 @@ export const rsvpEvent = (eventId: number, userId: number, attending: boolean) =
     return toEvent(event, author, db.event_rsvps, userId);
   });
 
+export const deleteEvent = (id: number, userId: number) =>
+  updateDatabase((db) => {
+    const index = db.events.findIndex((e) => e.id === id && e.user_id === userId);
+    if (index === -1) return { changes: 0 };
+    db.events.splice(index, 1);
+    // Also remove all RSVPs for this event
+    db.event_rsvps = db.event_rsvps.filter((rsvp) => rsvp.event_id !== id);
+    return { changes: 1 };
+  });
+
+export const getEventById = (id: number, viewerId?: number): Event | undefined => {
+  const db = readOnlyDatabase();
+  const event = db.events.find((e) => e.id === id);
+  if (!event) return undefined;
+  const author = db.users.find((u) => u.id === event.user_id);
+  if (!author) return undefined;
+  return toEvent(event, author, db.event_rsvps, viewerId);
+};
+

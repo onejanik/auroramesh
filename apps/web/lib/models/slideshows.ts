@@ -77,3 +77,20 @@ export const listSlideshows = (viewerId?: number, excludeUserId?: number, userId
     .filter(Boolean) as Slideshow[];
 };
 
+export const deleteSlideshow = (id: number, userId: number) =>
+  updateDatabase((db) => {
+    const index = db.slideshows.findIndex((s) => s.id === id && s.user_id === userId);
+    if (index === -1) return { changes: 0 };
+    db.slideshows.splice(index, 1);
+    return { changes: 1 };
+  });
+
+export const getSlideshowById = (id: number, viewerId?: number): Slideshow | undefined => {
+  const db = readOnlyDatabase();
+  const slideshow = db.slideshows.find((s) => s.id === id);
+  if (!slideshow) return undefined;
+  const author = db.users.find((u) => u.id === slideshow.user_id);
+  if (!author) return undefined;
+  return toSlideshow(slideshow, author);
+};
+
