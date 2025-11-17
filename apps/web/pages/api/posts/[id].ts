@@ -48,14 +48,8 @@ export default async function postHandler(req: NextApiRequest, res: NextApiRespo
     
     const userRecord = getUserById(user.id);
     const isAdmin = userRecord ? isAdminUser(userRecord) : false;
-    const isOwner = post.author.id === user.id;
     
-    if (!isOwner && !isAdmin) {
-      res.status(403).json({ message: 'Not allowed' });
-      return;
-    }
-    
-    const result = deletePost(id, post.author.id);
+    const result = deletePost(id, user.id, isAdmin);
     if (!result.changes) {
       res.status(403).json({ message: 'Not allowed' });
       return;

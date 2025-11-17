@@ -1,9 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { z } from 'zod';
-import { requireUser } from '../../../../lib/auth/requireUser';
-import { createComment, listCommentsForPost, listReplies } from '../../../../lib/models/comments';
+import { requireUser } from '../../../lib/auth/requireUser';
+import { createComment, listCommentsForTarget } from '../../../lib/models/comments';
 
 const schema = z.object({
+  targetType: z.enum(['post', 'poll', 'event', 'slideshow', 'audio']),
+  targetId: z.number().int().positive(),
   content: z.string().min(1).max(1000),
   parentCommentId: z.number().int().positive().optional()
 });
@@ -12,19 +14,12 @@ export default async function commentsHandler(req: NextApiRequest, res: NextApiR
   const user = requireUser(req, res);
   if (!user) return;
 
-  const postId = Number(req.query.id);
-  if (!Number.isFinite(postId)) {
-    res.status(400).json({ message: 'Ungültige Post-ID' });
-    return;
-  }
-
   if (req.method === 'POST') {
     try {
       const body = schema.parse(req.body);
       const comment = createComment({
-        targetType: 'post',
-        targetId: postId,
-        postId, // Legacy parameter for backward compatibility
+        targetType: body.targetType,
+        targetId: body.targetId,
         userId: user.id,
         content: body.content,
         parentCommentId: body.parentCommentId
@@ -37,12 +32,22 @@ export default async function commentsHandler(req: NextApiRequest, res: NextApiR
   }
 
   if (req.method === 'GET') {
-    const parentId = req.query.parentId ? Number(req.query.parentId) : undefined;
+    const { targetType, targetId, parentId } = req.query;
+    
+    if (!targetType || !targetId) {
+      res.status(400).json({ message: 'targetType and targetId required' });
+      return;
+    }
+    
     if (parentId) {
-      const replies = listReplies(parentId);
+      const { listReplies } = await import('../../../lib/models/comments');
+      const replies = listReplies(Number(parentId));
       res.status(200).json({ comments: replies });
     } else {
-      const comments = listCommentsForPost(postId);
+      const comments = listCommentsForTarget(
+        targetType as 'post' | 'poll' | 'event' | 'slideshow' | 'audio',
+        Number(targetId)
+      );
       res.status(200).json({ comments });
     }
     return;

@@ -233,9 +233,17 @@ export const listPosts = (
   return { posts: mapped, nextCursor };
 };
 
-export const deletePost = (id: number, userId: number) =>
+export const deletePost = (id: number, requestingUserId: number, isAdmin: boolean = false) =>
   updateDatabase((db) => {
-    const index = db.posts.findIndex((p) => p.id === id && p.user_id === userId);
+    const post = db.posts.find((p) => p.id === id);
+    if (!post) return { changes: 0 };
+    
+    // Only allow deletion if user is owner or admin
+    if (post.user_id !== requestingUserId && !isAdmin) {
+      return { changes: 0 };
+    }
+    
+    const index = db.posts.findIndex((p) => p.id === id);
     if (index === -1) return { changes: 0 };
     db.posts.splice(index, 1);
     return { changes: 1 };

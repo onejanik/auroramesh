@@ -4,11 +4,11 @@ import useSWR from 'swr';
 import type { Comment } from '../types/comment';
 import { fetcher } from '../lib/fetcher';
 import { useCurrentUser } from '../lib/hooks/useCurrentUser';
-import { extractMentions } from '../lib/utils/mentions';
 
 type Props = {
-  postId: number;
-  postAuthorId: number;
+  targetType: 'post' | 'poll' | 'event' | 'slideshow' | 'audio';
+  targetId: number;
+  authorId: number;
 };
 
 const CommentItem = ({ 
@@ -16,23 +16,24 @@ const CommentItem = ({
   onReply, 
   onDelete, 
   currentUserId, 
-  postAuthorId 
+  authorId 
 }: { 
   comment: Comment; 
   onReply: (parentId: number) => void;
   onDelete: (commentId: number) => void;
   currentUserId?: number;
-  postAuthorId: number;
+  authorId: number;
 }) => {
   const [showReplies, setShowReplies] = useState(false);
-  const targetId = comment.postId ?? comment.targetId;
+  const targetId = comment.targetId ?? comment.postId;
   const targetType = comment.targetType ?? 'post';
+  
   const { data } = useSWR<{ comments: Comment[] }>(
     showReplies && targetId ? `/api/comments?targetType=${targetType}&targetId=${targetId}&parentId=${comment.id}` : null,
     fetcher
   );
   
-  const canDelete = currentUserId === comment.author.id || currentUserId === postAuthorId;
+  const canDelete = currentUserId === comment.author.id || currentUserId === authorId;
 
   return (
     <div className="comment-item">
@@ -82,7 +83,7 @@ const CommentItem = ({
               onReply={onReply} 
               onDelete={onDelete}
               currentUserId={currentUserId}
-              postAuthorId={postAuthorId}
+              authorId={authorId}
             />
           ))}
         </div>
@@ -91,9 +92,12 @@ const CommentItem = ({
   );
 };
 
-export const CommentThread = ({ postId, postAuthorId }: Props) => {
+export const CommentThreadGeneric = ({ targetType, targetId, authorId }: Props) => {
   const { user } = useCurrentUser();
-  const { data, mutate } = useSWR<{ comments: Comment[] }>(`/api/posts/${postId}/comments`, fetcher);
+  const { data, mutate } = useSWR<{ comments: Comment[] }>(
+    `/api/comments?targetType=${targetType}&targetId=${targetId}`,
+    fetcher
+  );
   const [content, setContent] = useState('');
   const [parentId, setParentId] = useState<number | undefined>(undefined);
   const [isSubmitting, setSubmitting] = useState(false);
@@ -104,10 +108,15 @@ export const CommentThread = ({ postId, postAuthorId }: Props) => {
     setSubmitting(true);
     setError(null);
     try {
-      const response = await fetch(`/api/posts/${postId}/comments`, {
+      const response = await fetch('/api/comments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, parentCommentId: parentId })
+        body: JSON.stringify({ 
+          targetType, 
+          targetId, 
+          content, 
+          parentCommentId: parentId 
+        })
       });
       if (!response.ok) {
         const body = await response.json().catch(() => ({}));
@@ -135,23 +144,23 @@ export const CommentThread = ({ postId, postAuthorId }: Props) => {
   };
 
   return (
-    <div className="comments">
-      <h4>Kommentare</h4>
+    <div className="comments" style={{ marginTop: '1rem', padding: '0 1rem 1rem' }}>
+      <h4 style={{ marginBottom: '0.75rem', fontSize: '1rem' }}>Kommentare</h4>
       <textarea
         value={content}
         onChange={(e) => setContent(e.target.value)}
         placeholder={parentId ? 'Antwort verfassen…' : 'Kommentar verfassen…'}
-        style={{ width: '100%', minHeight: 80, marginBottom: '0.5rem' }}
+        style={{ width: '100%', minHeight: 80, marginBottom: '0.5rem', padding: '0.5rem', borderRadius: 8, border: '1px solid var(--border)' }}
       />
       {parentId && (
-        <p style={{ color: 'var(--muted)' }}>
+        <p style={{ color: 'var(--muted)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
           Du antwortest auf Kommentar #{parentId}{' '}
           <button type="button" className="link-button" onClick={() => setParentId(undefined)}>
             (Abbrechen)
           </button>
         </p>
       )}
-      {error && <p style={{ color: '#d63031' }}>{error}</p>}
+      {error && <p style={{ color: '#d63031', fontSize: '0.9rem' }}>{error}</p>}
       <button type="button" className="pill-button" onClick={submit} disabled={isSubmitting}>
         {isSubmitting ? 'Sendet...' : 'Absenden'}
       </button>
@@ -163,7 +172,7 @@ export const CommentThread = ({ postId, postAuthorId }: Props) => {
             onReply={(id) => setParentId(id)}
             onDelete={handleDelete}
             currentUserId={user?.id}
-            postAuthorId={postAuthorId}
+            authorId={authorId}
           />
         ))}
       </div>

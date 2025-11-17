@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import type { AudioNote } from '../types/audio';
 import { ReportButton } from './ReportButton';
+import { CommentThreadGeneric } from './CommentThreadGeneric';
 import { useCurrentUser } from '../lib/hooks/useCurrentUser';
 import { isAdminUser } from '../lib/auth/isAdmin';
 
@@ -16,6 +17,7 @@ const getMediaSrc = (path: string) => (path.startsWith('http') ? path : `/api/me
 export const AudioCard = ({ note, viewerId, isOwner: propIsOwner }: Props) => {
   const { user } = useCurrentUser();
   const [isDeleted, setIsDeleted] = useState(false);
+  const [showComments, setShowComments] = useState(false);
   
   const isOwner = propIsOwner ?? (user && note.author.id === user.id);
   const isAdmin = user ? isAdminUser({ id: user.id, email: user.email } as any) : false;
@@ -62,6 +64,20 @@ export const AudioCard = ({ note, viewerId, isOwner: propIsOwner }: Props) => {
       </header>
       {note.caption && <p style={{ whiteSpace: 'pre-wrap' }}>{note.caption}</p>}
       <audio controls style={{ width: '100%', marginTop: '0.5rem' }} src={getMediaSrc(note.audioUrl)} />
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.75rem' }}>
+        <button 
+          type="button" 
+          className="icon-button" 
+          onClick={() => setShowComments((value) => !value)}
+          style={{ fontSize: '0.9rem' }}
+        >
+          <i className="bi bi-chat-dots" />
+          Kommentare
+        </button>
+      </div>
+      {showComments && (
+        <CommentThreadGeneric targetType="audio" targetId={note.id} authorId={note.author.id} />
+      )}
     </article>
   );
 };

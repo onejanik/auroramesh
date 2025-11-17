@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import type { Poll } from '../types/poll';
 import { ReportButton } from './ReportButton';
+import { CommentThreadGeneric } from './CommentThreadGeneric';
 import { useCurrentUser } from '../lib/hooks/useCurrentUser';
 import { isAdminUser } from '../lib/auth/isAdmin';
 
@@ -16,6 +17,7 @@ export const PollCard = ({ poll, viewerId, isOwner: propIsOwner }: Props) => {
   const [state, setState] = useState(poll);
   const [isVoting, setVoting] = useState(false);
   const [isDeleted, setIsDeleted] = useState(false);
+  const [showComments, setShowComments] = useState(false);
   
   const isOwner = propIsOwner ?? (user && state.author.id === user.id);
   const isAdmin = user ? isAdminUser({ id: user.id, email: user.email } as any) : false;
@@ -101,7 +103,21 @@ export const PollCard = ({ poll, viewerId, isOwner: propIsOwner }: Props) => {
           );
         })}
       </div>
-      <small style={{ color: 'var(--muted)' }}>{totalVotes} Stimmen</small>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem' }}>
+        <small style={{ color: 'var(--muted)' }}>{totalVotes} Stimmen</small>
+        <button 
+          type="button" 
+          className="icon-button" 
+          onClick={() => setShowComments((value) => !value)}
+          style={{ fontSize: '0.9rem' }}
+        >
+          <i className="bi bi-chat-dots" />
+          Kommentare
+        </button>
+      </div>
+      {showComments && (
+        <CommentThreadGeneric targetType="poll" targetId={state.id} authorId={state.author.id} />
+      )}
     </article>
   );
 };

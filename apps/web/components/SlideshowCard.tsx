@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import type { Slideshow } from '../types/slideshow';
 import { ReportButton } from './ReportButton';
+import { CommentThreadGeneric } from './CommentThreadGeneric';
 import { useCurrentUser } from '../lib/hooks/useCurrentUser';
 import { isAdminUser } from '../lib/auth/isAdmin';
 
@@ -17,6 +18,7 @@ export const SlideshowCard = ({ slideshow, viewerId, isOwner: propIsOwner }: Pro
   const { user } = useCurrentUser();
   const [index, setIndex] = useState(0);
   const [isDeleted, setIsDeleted] = useState(false);
+  const [showComments, setShowComments] = useState(false);
   
   const isOwner = propIsOwner ?? (user && slideshow.author.id === user.id);
   const isAdmin = user ? isAdminUser({ id: user.id, email: user.email } as any) : false;
@@ -80,6 +82,20 @@ export const SlideshowCard = ({ slideshow, viewerId, isOwner: propIsOwner }: Pro
           <span key={dotIdx} className={`slideshow-dot ${dotIdx === index ? 'is-active' : ''}`} />
         ))}
       </div>
+      <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.75rem' }}>
+        <button 
+          type="button" 
+          className="icon-button" 
+          onClick={() => setShowComments((value) => !value)}
+          style={{ fontSize: '0.9rem' }}
+        >
+          <i className="bi bi-chat-dots" />
+          Kommentare
+        </button>
+      </div>
+      {showComments && (
+        <CommentThreadGeneric targetType="slideshow" targetId={slideshow.id} authorId={slideshow.author.id} />
+      )}
     </article>
   );
 };

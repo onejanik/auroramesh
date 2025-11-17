@@ -104,7 +104,9 @@ export type StoredReport = {
 
 export type StoredComment = {
   id: number;
-  post_id: number;
+  post_id?: number | null; // Legacy field, kept for backward compatibility
+  target_type?: 'post' | 'poll' | 'event' | 'slideshow' | 'audio';
+  target_id?: number;
   user_id: number;
   content: string;
   parent_comment_id?: number | null;

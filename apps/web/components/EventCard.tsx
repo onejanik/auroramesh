@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import type { Event } from '../types/event';
 import { ReportButton } from './ReportButton';
+import { CommentThreadGeneric } from './CommentThreadGeneric';
 import { useCurrentUser } from '../lib/hooks/useCurrentUser';
 import { isAdminUser } from '../lib/auth/isAdmin';
 
@@ -16,6 +17,7 @@ export const EventCard = ({ event, viewerId, isOwner: propIsOwner }: Props) => {
   const [current, setCurrent] = useState(event);
   const [isBusy, setBusy] = useState(false);
   const [isDeleted, setIsDeleted] = useState(false);
+  const [showComments, setShowComments] = useState(false);
   
   const isOwner = propIsOwner ?? (user && current.author.id === user.id);
   const isAdmin = user ? isAdminUser({ id: user.id, email: user.email } as any) : false;
@@ -84,12 +86,26 @@ export const EventCard = ({ event, viewerId, isOwner: propIsOwner }: Props) => {
       </header>
       <p style={{ margin: '0.5rem 0', color: 'var(--muted)' }}>{current.location}</p>
       {current.description && <p style={{ whiteSpace: 'pre-wrap' }}>{current.description}</p>}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
         <small style={{ color: 'var(--muted)' }}>{current.stats.rsvps} Zusagen</small>
-        <button type="button" className="pill-button" onClick={toggleRsvp} disabled={isBusy}>
-          {current.viewerRsvp ? 'Teilnahme zurückziehen' : 'Ich bin dabei'}
-        </button>
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+          <button 
+            type="button" 
+            className="icon-button" 
+            onClick={() => setShowComments((value) => !value)}
+            style={{ fontSize: '0.9rem' }}
+          >
+            <i className="bi bi-chat-dots" />
+            Kommentare
+          </button>
+          <button type="button" className="pill-button" onClick={toggleRsvp} disabled={isBusy}>
+            {current.viewerRsvp ? 'Teilnahme zurückziehen' : 'Ich bin dabei'}
+          </button>
+        </div>
       </div>
+      {showComments && (
+        <CommentThreadGeneric targetType="event" targetId={current.id} authorId={current.author.id} />
+      )}
     </article>
   );
 };
