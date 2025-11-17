@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 
-const DEFAULT_DB_PATH = path.join(process.cwd(), '../../.data/connectsphere.json');
+const DEFAULT_DB_PATH = process.env.DATABASE_PATH || '/var/lib/auroramesh/data/connectsphere.json';
 
 export type StoredUser = {
   id: number;
