@@ -50,6 +50,13 @@ export default async function uploadHandler(req: NextApiRequest, res: NextApiRes
     const extension = file.originalFilename?.split('.').pop() ?? 'bin';
     const remotePath = `/uploads/${user.id}/${Date.now()}-${Math.random().toString(16).slice(2)}.${extension}`;
 
+    // Debug WebDAV config (remove in production)
+    console.log('WebDAV Config:', {
+      url: process.env.WEBDAV_URL,
+      username: process.env.WEBDAV_USERNAME,
+      hasPassword: !!process.env.WEBDAV_PASSWORD
+    });
+
     const client = getWebdavClient();
     const folderPath = `/uploads/${user.id}`;
     try {
@@ -87,7 +94,18 @@ export default async function uploadHandler(req: NextApiRequest, res: NextApiRes
     const status = (error as any)?.status;
     const message = error instanceof Error ? error.message : String(error);
     console.error(`Upload failed (status ${status ?? 'n/a'}):`, message);
-    res.status(500).json({ message: 'Upload failed' });
+    console.error('Full error:', error);
+    res.status(500).json({ 
+      message: `Upload failed (status ${status}): ${message}`,
+      debug: process.env.NODE_ENV === 'development' ? { 
+        status, 
+        error: message,
+        config: {
+          url: process.env.WEBDAV_URL,
+          username: process.env.WEBDAV_USERNAME
+        }
+      } : undefined
+    });
   }
 }
 
