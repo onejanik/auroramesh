@@ -48,7 +48,7 @@ AuroraMesh ist eine moderne, datenschutzfreundliche Social-Media-Plattform mit F
 
 ```bash
 # Repository klonen
-git clone https://github.com/yourusername/auroramesh.git
+git clone https://github.com/onejanik/auroramesh.git
 cd auroramesh
 
 # Abhängigkeiten installieren
@@ -189,8 +189,8 @@ Dieses Projekt ist unter der MIT-Lizenz lizenziert - siehe [LICENSE](LICENSE) f�
 
 ## 📞 Support & Kontakt
 
-- **Issues:** [GitHub Issues](https://github.com/yourusername/auroramesh/issues)
-- **Discussions:** [GitHub Discussions](https://github.com/yourusername/auroramesh/discussions)
+- **Issues:** [GitHub Issues](https://github.com/onejanik/auroramesh/issues)
+- **Discussions:** [GitHub Discussions](https://github.com/onejanik/auroramesh/discussions)
 - **Website:** [auroramesh.de](https://auroramesh.de)
 
 ## 🎯 Roadmap
